@@ -1,0 +1,21 @@
+# Example override file for local development
+# Copy this to docker-compose.override.yml and customize
+
+version: '3.8'
+
+services:
+  superset:
+    environment:
+      # Override for local development
+      SUPERSET_SECRET_KEY: local-dev-secret-key
+    volumes:
+      # Mount local database if needed
+      - C:/Users/Nalivator3000/superset-data-import/events.db:/data/events.db:ro
+
+  analysis:
+    volumes:
+      # Mount local scripts for development
+      - ./07_scripts:/app/scripts:rw
+      # Mount local database
+      - C:/Users/Nalivator3000/superset-data-import/events.db:/data/events.db:ro
+

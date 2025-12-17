@@ -1,6 +1,6 @@
 import pandas as pd
-import sqlite3
 import sys
+from db_utils import get_db_connection
 
 if len(sys.argv) < 4:
     print("Usage: python analyze_period.py <name> <start_date> <end_date>")
@@ -16,7 +16,7 @@ print(f"REACTIVATIONS ANALYSIS: {period_name} ({start_date} to {end_date})")
 print("=" * 80)
 print()
 
-conn = sqlite3.connect('events.db')
+conn = get_db_connection()
 
 # Get all users who deposited in this period
 print("1. Getting depositors...")

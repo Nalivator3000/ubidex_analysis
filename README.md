@@ -13,21 +13,21 @@
 ## Структура проекта
 
 ```
-superset-data-import/
-├── 01_raw_data/              # Исходные данные (events.db)
-├── 02_control_periods/       # Контрольные периоды (авг, сен, окт)
-├── 03_campaign_period/       # Период кампании (ноябрь)
-├── 04_comparison_analysis/   # Сравнительный анализ
+ubidex_analysis/
 ├── 05_publisher_analysis/    # Анализ паблишеров
-├── 06_kadam_analysis/        # Анализ Kadam
-├── 07_scripts/               # Скрипты
-└── 08_reports/               # Итоговые отчеты
+├── 07_scripts/               # Скрипты анализа
+├── data/                     # База данных (PostgreSQL или SQLite)
+├── output/                   # Результаты анализа
+├── docker-compose.yml        # Docker конфигурация
+├── Dockerfile                # Образ приложения
+└── requirements.txt          # Зависимости Python
 ```
 
 ## Основные скрипты
 
 ### Импорт и подготовка данных
-- `import_to_sqlite.py` - импорт CSV данных в SQLite
+- `import_to_sqlite.py` - импорт CSV данных в SQLite (legacy)
+- `migrate_to_postgresql.py` - миграция из SQLite в PostgreSQL
 
 ### Анализ периодов
 - `analyze_period.py` - универсальный анализ любого периода
@@ -46,25 +46,53 @@ superset-data-import/
 
 ## Быстрый старт
 
-### Установка зависимостей
+### Docker (рекомендуется)
+
+См. [QUICKSTART.md](QUICKSTART.md) для быстрого старта с Docker.
+
 ```bash
-pip install pandas sqlite3
+# 1. Запустить контейнеры
+docker-compose up -d
+
+# 2. Мигрировать данные (если нужно)
+docker exec -it ubidex_analysis python scripts/migrate_to_postgresql.py
+
+# 3. Открыть Superset
+# http://localhost:8088 (admin/admin)
 ```
 
-### Импорт данных
-```bash
-python 07_scripts/import_to_sqlite.py
-```
+### Локальный запуск
 
-### Анализ периода
 ```bash
-python 07_scripts/analyze_period.py "Period_Name" "2025-11-18" "2025-11-23"
-```
+# Установка зависимостей
+pip install -r requirements.txt
 
-### Расчет коэффициентов ставок
-```bash
+# Настройка переменных окружения
+export DB_TYPE=postgresql  # или sqlite
+export POSTGRES_HOST=localhost
+export POSTGRES_USER=ubidex
+export POSTGRES_PASSWORD=ubidex
+export POSTGRES_DB=ubidex
+
+# Запуск скрипта
 python 07_scripts/calculate_bid_coefficients.py
 ```
+
+## База данных
+
+### PostgreSQL (рекомендуется для больших объемов)
+
+Проект использует PostgreSQL для хранения данных. Это обеспечивает:
+- Масштабируемость до 1+ TB
+- Лучшую производительность на больших данных
+- Параллельную обработку запросов
+- Расширенные возможности (партиционирование, индексы)
+
+**Миграция из SQLite**: см. [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)
+
+### SQLite (legacy)
+
+Поддерживается для обратной совместимости, но не рекомендуется для больших объемов (>100GB).
 
 ## Методология расчета коэффициентов ставок
 
@@ -103,19 +131,31 @@ python 07_scripts/calculate_bid_coefficients.py
 - **CPA** - Cost Per Acquisition (стоимость привлечения)
 - **RD Rate** - процент повторных депозитов (~97.5%)
 
-## База данных
-
-Основная БД: `events.db` (SQLite)
-- Размер: ~6.9 GB
-- Записей: ~21.5M
-- Период: март - декабрь 2025
-- Таблица: `user_events` (external_user_id, event_type, event_date, publisher_id)
-
 ## Требования
 
+### Для Docker (рекомендуется):
+- Docker 20.10+
+- Docker Compose 2.0+
+- Минимум 8GB RAM (рекомендуется 16GB для больших данных)
+
+### Для локального запуска:
 - Python 3.8+
-- pandas
-- sqlite3
+- PostgreSQL 15+ (или SQLite для небольших объемов)
+- pandas, sqlalchemy, psycopg2-binary
+
+## Docker развертывание
+
+Проект полностью упакован в Docker контейнеры:
+- **Superset** - веб-интерфейс для визуализации данных (порт 8088)
+- **PostgreSQL** - база данных для данных и метаданных Superset
+- **Redis** - кеширование для Superset
+- **Analysis** - контейнер со скриптами анализа
+
+Подробная документация:
+- [QUICKSTART.md](QUICKSTART.md) - быстрый старт
+- [DOCKER_SETUP.md](DOCKER_SETUP.md) - подробная инструкция
+- [DEPLOY.md](DEPLOY.md) - развертывание на сервере
+- [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - миграция на PostgreSQL
 
 ## Автор
 

@@ -14,18 +14,32 @@ print()
 
 # Function to extract publisher_id and format from publisher name
 def extract_format(publisher_str):
-    """Extract ad format from publisher name"""
+    """Extract ad format from publisher name with improved logic"""
     name_upper = str(publisher_str).upper()
-
-    if 'POP' in name_upper:
+    
+    # Используем регулярные выражения для более точного определения формата
+    # Ищем формат после дефиса или в конце названия (например, "-PUSH", "PUSH-Premium", "UGW-VIDEO")
+    
+    # Используем более строгие паттерны - формат должен быть отдельным словом
+    # после дефиса, перед дефисом, или в конце, но НЕ внутри другого слова
+    # Проверяем форматы в правильном порядке - сначала более специфичные
+    
+    # POP - проверяем перед PUSH, чтобы перехватить "-POP" раньше
+    if re.search(r'-POP\b|POP-|POP\s|POP$', name_upper):
         return 'POP'
-    elif 'PUSH' in name_upper or 'IN-PAGE' in name_upper or 'INPAGE' in name_upper:
-        return 'PUSH'
-    elif 'VIDEO' in name_upper:
-        return 'VIDEO'
-    elif 'BANNER' in name_upper:
+    # BANNER - проверяем первым среди остальных, так как может быть в конце названия
+    elif re.search(r'-BANNER\b|BANNER-|BANNER\s|BANNER$', name_upper):
         return 'BANNER'
-    elif 'NATIVE' in name_upper:
+    # VIDEO - проверяем перед PUSH
+    elif re.search(r'-VIDEO\b|VIDEO-|VIDEO\s|VIDEO$', name_upper):
+        return 'VIDEO'
+    # PUSH - проверяем последним, исключая случаи где PUSH внутри слова
+    # Ищем PUSH только как отдельное слово (после/перед дефисом или пробелом)
+    elif (re.search(r'-PUSH\b|PUSH-|PUSH\s|PUSH$|IN-PAGE|INPAGE', name_upper) and 
+          not re.search(r'[A-Z]PUSH[A-Z]', name_upper)):  # Исключаем PUSH внутри слова
+        return 'PUSH'
+    # NATIVE
+    elif re.search(r'-NATIVE\b|NATIVE-|NATIVE\s|NATIVE$', name_upper):
         return 'NATIVE'
     else:
         return 'OTHER'
@@ -62,7 +76,8 @@ print()
 print("2. Загружаю FTD/RD статистику из базы данных (ноябрь)...")
 print()
 
-conn = sqlite3.connect('events.db')
+from db_utils import get_db_connection
+conn = get_db_connection()
 
 query_nov = '''
 WITH user_first_deposit_ever AS (

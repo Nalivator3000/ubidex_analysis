@@ -11,7 +11,8 @@ print("АНАЛИЗ ПАБЛИШЕРОВ: Стоимость FTD и RD (Нояб
 print("=" * 80)
 print()
 
-conn = sqlite3.connect('events.db')
+from db_utils import get_db_connection
+conn = get_db_connection()
 
 # Get deposit data for November 18-23
 print("1. Загружаю данные о депозитах...")

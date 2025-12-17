@@ -11,7 +11,8 @@ print("АНАЛИЗ ПАБЛИШЕРОВ: Ноябрь 18-23, 2025")
 print("=" * 80)
 print()
 
-conn = sqlite3.connect('events.db')
+from db_utils import get_db_connection
+conn = get_db_connection()
 
 # Get all reactivations by publisher for November 18-23
 print("1. Анализирую реактивации по паблишерам...")

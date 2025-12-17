@@ -7,7 +7,8 @@ print("Control Period Analysis: October 18-23, 2025 (NO ADS)")
 print("=" * 80)
 print()
 
-conn = sqlite3.connect('events.db')
+from db_utils import get_db_connection
+conn = get_db_connection()
 
 # Optimized: Get all data in one query using window functions
 print("1. Analyzing October depositors with SQL...")

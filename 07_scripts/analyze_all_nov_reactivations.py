@@ -6,7 +6,8 @@ print("ВСЕ РЕАКТИВАЦИИ: Ноябрь 18-23, 2025")
 print("=" * 80)
 print()
 
-conn = sqlite3.connect('events.db')
+from db_utils import get_db_connection
+conn = get_db_connection()
 
 # Step 1: Get all users who deposited in Nov 18-23
 print("1. Получаем всех депозитных юзеров ноября 18-23...")

@@ -1,0 +1,22 @@
+FROM apache/superset:latest
+
+# Install psycopg2 for PostgreSQL support
+USER root
+
+# Install system dependencies for psycopg2
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    libpq-dev \
+    gcc \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install psycopg2 into the venv
+# First ensure pip is available in venv, then install psycopg2
+RUN /app/.venv/bin/python -m ensurepip --upgrade --default-pip && \
+    /app/.venv/bin/python -m pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    /app/.venv/bin/python -m pip install --no-cache-dir psycopg2-binary && \
+    chown -R superset:superset /app/.venv
+
+USER superset
+

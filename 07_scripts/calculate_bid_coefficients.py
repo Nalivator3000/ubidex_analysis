@@ -20,18 +20,28 @@ def extract_publisher_id(publisher_str):
     return None
 
 def extract_format(publisher_str):
-    """Extract ad format from publisher name"""
+    """Extract ad format from publisher name with improved logic"""
     name_upper = str(publisher_str).upper()
-
-    if 'POP' in name_upper:
-        return 'POP'
-    elif 'PUSH' in name_upper or 'IN-PAGE' in name_upper or 'INPAGE' in name_upper:
-        return 'PUSH'
-    elif 'VIDEO' in name_upper:
-        return 'VIDEO'
-    elif 'BANNER' in name_upper:
+    
+    # Используем регулярные выражения для более точного определения формата
+    # Ищем формат после дефиса или в конце названия (например, "-PUSH", "PUSH-Premium", "UGW-VIDEO")
+    
+    # BANNER - проверяем первым, так как может быть в конце названия
+    if re.search(r'-BANNER|BANNER-|BANNER\s|BANNER$', name_upper):
         return 'BANNER'
-    elif 'NATIVE' in name_upper:
+    # VIDEO - проверяем перед PUSH, чтобы не перехватить "VIDEO" в других словах
+    elif re.search(r'-VIDEO|VIDEO-|VIDEO\s|VIDEO$', name_upper):
+        return 'VIDEO'
+    # PUSH - проверяем точные паттерны, чтобы не перехватить "RealPush", "Pushub" и т.д.
+    # Ищем PUSH после дефиса, перед дефисом, или как отдельное слово, но НЕ в начале слова
+    # Исключаем случаи типа "RealPush", "Pushub" (PUSH в начале или середине слова)
+    elif re.search(r'-PUSH|PUSH-|PUSH\s|PUSH$|IN-PAGE|INPAGE', name_upper) and not re.search(r'^[A-Z]*PUSH|PUSH[A-Z]', name_upper):
+        return 'PUSH'
+    # POP
+    elif re.search(r'-POP|POP-|POP\s|POP$', name_upper):
+        return 'POP'
+    # NATIVE
+    elif re.search(r'-NATIVE|NATIVE-|NATIVE\s|NATIVE$', name_upper):
         return 'NATIVE'
     else:
         return 'OTHER'
@@ -130,7 +140,8 @@ print()
 print("3. Загружаю статистику депозитов из базы данных...")
 print()
 
-conn = sqlite3.connect('events.db')
+from db_utils import get_db_connection
+conn = get_db_connection()
 
 query_nov = '''
 WITH user_first_deposit_ever AS (

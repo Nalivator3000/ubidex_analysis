@@ -11,7 +11,8 @@ print("АНАЛИЗ ПАБЛИШЕРОВ: Полные месяцы (Октяб�
 print("=" * 80)
 print()
 
-conn = sqlite3.connect('events.db')
+from db_utils import get_db_connection
+conn = get_db_connection()
 
 # Function to analyze a full month
 def analyze_month(month_name, start_date, end_date):

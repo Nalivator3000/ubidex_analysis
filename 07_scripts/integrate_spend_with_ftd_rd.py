@@ -56,7 +56,8 @@ print()
 print("2. Загружаю FTD/RD статистику из базы данных...")
 print()
 
-conn = sqlite3.connect('events.db')
+from db_utils import get_db_connection
+conn = get_db_connection()
 
 # November FTD/RD
 query_nov = '''
