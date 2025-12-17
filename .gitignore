@@ -1,0 +1,77 @@
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# CSV files (reports and data)
+*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Report directories (keep structure, ignore contents)
+01_raw_data/*
+!01_raw_data/README.md
+02_control_periods/*
+!02_control_periods/README.md
+03_campaign_period/*
+!03_campaign_period/README.md
+04_comparison_analysis/*
+!04_comparison_analysis/README.md
+05_publisher_analysis/*
+!05_publisher_analysis/README.md
+06_kadam_analysis/*
+!06_kadam_analysis/README.md
+08_reports/*
+!08_reports/README.md
+
+# Keep script directory
+!07_scripts/
+!07_scripts/**/*.py
+!07_scripts/README.md
+
+# Downloaded files
+Downloads/
