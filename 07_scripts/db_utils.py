@@ -13,12 +13,18 @@ def get_db_type():
 
 def get_postgres_connection_string():
     """Build PostgreSQL connection string from environment variables"""
+    # If full DATABASE_URL is provided (e.g. Railway style), use it directly
+    database_url = os.environ.get("DATABASE_URL")
+    if database_url:
+        return database_url
+
+    # Fallback to individual env vars
     host = os.environ.get('POSTGRES_HOST', 'localhost')
     port = os.environ.get('POSTGRES_PORT', '5432')
     user = os.environ.get('POSTGRES_USER', 'ubidex')
     password = os.environ.get('POSTGRES_PASSWORD', 'ubidex')
     database = os.environ.get('POSTGRES_DB', 'ubidex')
-    
+
     return f"postgresql://{user}:{password}@{host}:{port}/{database}"
 
 def get_sqlite_path():
