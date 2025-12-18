@@ -86,9 +86,12 @@ print()
 
 # Create table in PostgreSQL
 print("Создание таблицы в PostgreSQL...")
+# В PostgreSQL не будем задавать PRIMARY KEY по event_id, чтобы избежать
+# ошибок при возможных дубликатах идентификаторов событий. Для аналитики
+# нам важнее полнота данных и корректная агрегация по пользователям/датам.
 create_table_sql = """
 CREATE TABLE IF NOT EXISTS user_events (
-    event_id TEXT PRIMARY KEY,
+    event_id TEXT,
     external_user_id TEXT,
     ubidex_id TEXT,
     event_type TEXT NOT NULL,
@@ -107,8 +110,9 @@ CREATE TABLE IF NOT EXISTS user_events (
 );
 """
 
-# Create indexes
+# Индексы для ускорения аналитических запросов
 create_indexes_sql = [
+    "CREATE INDEX IF NOT EXISTS idx_event_id ON user_events(event_id);",
     "CREATE INDEX IF NOT EXISTS idx_external_user_id ON user_events(external_user_id);",
     "CREATE INDEX IF NOT EXISTS idx_event_type ON user_events(event_type);",
     "CREATE INDEX IF NOT EXISTS idx_event_date ON user_events(event_date);",
