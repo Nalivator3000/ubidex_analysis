@@ -112,8 +112,7 @@ superset fab create-admin \
   --firstname "${ADMIN_FIRSTNAME}" \
   --lastname "${ADMIN_LASTNAME}" \
   --email "${ADMIN_EMAIL}" \
-  --password "${ADMIN_PASSWORD}" \
-  --force || true
+  --password "${ADMIN_PASSWORD}" || true
 
 # Initialize default roles, perms, etc.
 superset init || true
