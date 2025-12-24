@@ -124,5 +124,12 @@ python3 /app/superset_init.py || true
 # Use PORT from environment (Railway) or default to 8088
 PORT=${PORT:-8088}
 echo "Starting Superset server on port ${PORT}..."
-exec superset run -h 0.0.0.0 -p ${PORT} --with-threads --reload --debugger
+echo "Environment variables:"
+echo "  PORT=${PORT}"
+echo "  DATABASE_URL=${DATABASE_URL:0:50}..."
+echo "  REDIS_HOST=${REDIS_HOST}"
+echo "  REDIS_PORT=${REDIS_PORT}"
+echo "Starting server..."
+# Use --with-threads for production, remove --reload and --debugger
+exec superset run -h 0.0.0.0 -p ${PORT} --with-threads
 
