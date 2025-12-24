@@ -67,9 +67,7 @@ deposits_with_groups AS (
       AND ue.converted_amount > 0
       AND ue.external_user_id IS NOT NULL
       AND LENGTH(ue.external_user_id) >= ce.char_position  -- Проверяем, что user_id достаточно длинный
-      -- Фильтрация по дате (применяется через Dashboard фильтры)
-      -- AND ue.event_date >= '{{ start_date }}'::date
-      -- AND ue.event_date <= '{{ end_date }}'::date
+      -- Фильтрация по дате применяется через Dashboard фильтры (Time Range Filter)
 ),
 
 -- 3. Агрегируем по пользователям для расчета активности

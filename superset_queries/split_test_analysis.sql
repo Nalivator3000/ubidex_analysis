@@ -37,9 +37,7 @@ deposits_with_groups AS (
     WHERE ue.event_type = 'deposit'
       AND ue.converted_amount > 0
       AND ue.external_user_id IS NOT NULL
-      -- Фильтрация по дате (применяется через Dashboard фильтры)
-      -- AND ue.event_date >= '{{ start_date }}'::date
-      -- AND ue.event_date <= '{{ end_date }}'::date
+      -- Фильтрация по дате применяется через Dashboard фильтры (Time Range Filter)
 ),
 
 -- 2. Агрегируем по пользователям для расчета активности
