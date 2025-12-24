@@ -2,22 +2,59 @@
 
 ## Описание
 
-Chart для сравнения контрольной (25%) и тестовой (75%) групп пользователей по депозитам.
+Chart для сравнения контрольной и тестовой групп пользователей по депозитам.
 
-**Группы:**
-- **Control (25%)**: user_id заканчивается на 0-7
-- **Test (75%)**: user_id заканчивается на 8-9a-z
+**Гибкие настройки:**
+- Позиция символа с конца: 1 (последний), 2 (предпоследний), 3 (третий), и т.д.
+- Диапазон символов для контрольной группы (настраивается)
+- Диапазон символов для тестовой группы (настраивается)
 
-## Шаг 1: Создание Dataset
+**Стандартные группы (по умолчанию):**
+- **Control (25%)**: последний символ 0-7
+- **Test (75%)**: последний символ 8-9a-z
+
+## Шаг 1: Выбор варианта SQL запроса
+
+### Вариант A: Стандартный (последний символ, Control: 0-7, Test: 8-9a-z)
+- Используйте: `split_test_analysis.sql`
+
+### Вариант B: Гибкий (настраиваемые параметры)
+- Используйте: `split_test_analysis_flexible.sql`
+- Отредактируйте CTE `char_expansion` для изменения параметров
+
+### Вариант C: Генерация через скрипт
+```bash
+python 07_scripts/generate_split_test_variant.py \
+  --position 1 \
+  --control "0-7" \
+  --test "8-9a-z" \
+  --exclude-top 5 \
+  --exclude-bottom 5 \
+  --output superset_queries/split_test_custom.sql
+```
+
+**Примеры команд:**
+```bash
+# Предпоследний символ, Control: 0-3, Test: 4-9a-z
+python 07_scripts/generate_split_test_variant.py --position 2 --control "0-3" --test "4-9a-z" -o split_test_pos2.sql
+
+# Третий с конца, Control: четные 0-8, Test: нечетные 1-9 + a-z
+python 07_scripts/generate_split_test_variant.py --position 3 --control "0,2,4,6,8" --test "1,3,5,7,9,a-z" -o split_test_pos3.sql
+
+# С исключением выбросов (топ 5% и низ 5%)
+python 07_scripts/generate_split_test_variant.py --position 1 --control "0-7" --test "8-9a-z" --exclude-top 5 --exclude-bottom 5 -o split_test_no_outliers.sql
+```
+
+## Шаг 2: Создание Dataset
 
 1. Откройте Superset → **SQL Lab**
-2. Скопируйте SQL из `split_test_analysis.sql`
+2. Скопируйте SQL из выбранного файла
 3. Выполните запрос (проверьте, что он работает)
 4. Нажмите **"Save"** → **"Save as dataset"**
-5. Название: `Split Test Analysis`
+5. Название: `Split Test Analysis` (или другое, если используете несколько вариантов)
 6. Нажмите **"Save"**
 
-## Шаг 2: Создание Chart
+## Шаг 3: Создание Chart
 
 ### Вариант A: Автоматическое создание через скрипт
 
@@ -47,14 +84,14 @@ python 07_scripts/create_split_test_chart.py
 7. Нажмите **"Save"**
 8. Название: `Split Test Comparison`
 
-## Шаг 3: Создание Dashboard
+## Шаг 4: Создание Dashboard
 
 1. Откройте Superset → **Dashboards** → **+ Dashboard**
 2. Название: `Split Test Analysis`
 3. Добавьте Chart: **"Split Test Comparison"**
 4. Нажмите **"Save"**
 
-## Шаг 4: Добавление фильтров
+## Шаг 5: Добавление фильтров
 
 ### Фильтр 1: Time Range (даты)
 
