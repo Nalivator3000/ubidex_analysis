@@ -43,33 +43,84 @@ try:
     access_token = login_response.json()["access_token"]
     refresh_token = login_response.json()["refresh_token"]
     
-    # Get CSRF token
-    csrf_token = session.cookies.get('csrf_access_token') or session.cookies.get('csrf')
-    
     print("   ✓ Авторизация успешна")
+    
+    # Get CSRF token - Superset requires it for PUT/POST/DELETE operations
+    print("   Получение CSRF токена...")
+    csrf_token = None
+    
+    # Method 1: Try CSRF endpoint
+    try:
+        csrf_url = f"{SUPERSET_URL}/api/v1/security/csrf_token/"
+        csrf_headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Referer": SUPERSET_URL
+        }
+        csrf_response = session.get(csrf_url, headers=csrf_headers, timeout=30)
+        if csrf_response.status_code == 200:
+            csrf_data = csrf_response.json()
+            # Try different response formats
+            if isinstance(csrf_data, dict):
+                if "result" in csrf_data:
+                    result = csrf_data["result"]
+                    if isinstance(result, dict):
+                        csrf_token = result.get("csrf_token")
+                    elif isinstance(result, str):
+                        csrf_token = result
+                else:
+                    csrf_token = csrf_data.get("csrf_token")
+            elif isinstance(csrf_data, str):
+                csrf_token = csrf_data
+            if csrf_token:
+                print(f"   ✓ CSRF токен получен из endpoint: {csrf_token[:20]}...")
+    except Exception as e:
+        print(f"   ⚠ CSRF endpoint не сработал: {e}")
+    
+    # Method 2: Check cookies after any request
+    if not csrf_token:
+        for cookie in session.cookies:
+            cookie_name = cookie.name.lower()
+            if 'csrf' in cookie_name:
+                csrf_token = cookie.value
+                print(f"   ✓ CSRF токен найден в cookie: {cookie.name}")
+                break
+    
+    if not csrf_token:
+        print("   ⚠ CSRF токен не получен - Superset может требовать его для PUT запросов")
 except Exception as e:
     print(f"   ✗ Ошибка авторизации: {e}")
-    if login_response.status_code == 401:
+    if hasattr(e, 'response') and e.response and e.response.status_code == 401:
         print("   Проверьте SUPERSET_USERNAME и SUPERSET_PASSWORD")
     sys.exit(1)
 
 # Headers for API requests
 headers = {
     "Authorization": f"Bearer {access_token}",
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "Referer": SUPERSET_URL
 }
 
 if csrf_token:
     headers["X-CSRFToken"] = csrf_token
-    headers["Referer"] = SUPERSET_URL
+    # Also add to session cookies for subsequent requests
+    session.cookies.set('csrf_access_token', csrf_token)
 
 # Step 2: Get database
 print("2. Поиск базы данных...")
 db_url = f"{SUPERSET_URL}/api/v1/database/"
 try:
-    db_response = requests.get(db_url, headers=headers, timeout=30)
+    db_response = session.get(db_url, headers=headers, timeout=30)
     db_response.raise_for_status()
     databases = db_response.json()["result"]
+    
+    # After GET request, check for CSRF token again
+    if not csrf_token:
+        for cookie in session.cookies:
+            if 'csrf' in cookie.name.lower():
+                csrf_token = cookie.value
+                headers["X-CSRFToken"] = csrf_token
+                print(f"   ✓ CSRF токен получен после GET запроса: {cookie.name}")
+                break
     
     db_id = None
     db_data = None
@@ -95,10 +146,19 @@ except Exception as e:
 print("3. Получение текущей конфигурации...")
 try:
     get_db_url = f"{SUPERSET_URL}/api/v1/database/{db_id}"
-    get_response = requests.get(get_db_url, headers=headers, timeout=30)
+    get_response = session.get(get_db_url, headers=headers, timeout=30)
     get_response.raise_for_status()
     current_db = get_response.json()["result"]
     print("   ✓ Конфигурация получена")
+    
+    # Check for CSRF token one more time after GET
+    if not csrf_token:
+        for cookie in session.cookies:
+            if 'csrf' in cookie.name.lower():
+                csrf_token = cookie.value
+                headers["X-CSRFToken"] = csrf_token
+                print(f"   ✓ CSRF токен получен: {cookie.name}")
+                break
 except Exception as e:
     print(f"   ✗ Ошибка при получении конфигурации: {e}")
     sys.exit(1)
@@ -107,21 +167,17 @@ except Exception as e:
 print("4. Обновление конфигурации...")
 print()
 
-# Prepare update payload
-update_payload = {
-    "database_name": current_db.get("database_name"),
-    "sqlalchemy_uri": current_db.get("sqlalchemy_uri"),
-    "cache_timeout": current_db.get("cache_timeout", 0),
-    "expose_in_sqllab": current_db.get("expose_in_sqllab", True),
-    "allow_run_async": True,  # Enable async queries
-    "query_timeout": 600,  # 10 minutes in seconds
-}
+# Prepare update payload - update only what we need
+update_payload = {}
 
-# Copy other existing fields
-for field in ["configuration_method", "engine", "extra", "impersonate_user", 
-              "is_managed_externally", "server_cert", "parameters"]:
-    if field in current_db:
-        update_payload[field] = current_db[field]
+# Copy all existing fields first
+for key, value in current_db.items():
+    if key not in ["id", "changed_on", "created_on", "changed_by", "created_by", "changed_by_fk", "created_by_fk"]:
+        update_payload[key] = value
+
+# Update only the fields we need to change
+update_payload["allow_run_async"] = True  # Enable async queries
+update_payload["query_timeout"] = 600  # 10 minutes in seconds
 
 # Check current settings
 current_async = current_db.get("allow_run_async", False)
@@ -143,7 +199,16 @@ if current_async == update_payload["allow_run_async"] and current_timeout == upd
 # Update database
 try:
     update_url = f"{SUPERSET_URL}/api/v1/database/{db_id}"
-    update_response = requests.put(update_url, headers=headers, json=update_payload, timeout=30)
+    
+    # Ensure CSRF token is in headers
+    if csrf_token:
+        headers["X-CSRFToken"] = csrf_token
+        print(f"   Используется CSRF токен: {csrf_token[:20]}...")
+    else:
+        print("   ⚠ CSRF токен отсутствует, но попробуем обновить")
+    
+    # Use session for PUT request to maintain cookies
+    update_response = session.put(update_url, headers=headers, json=update_payload, timeout=30)
     update_response.raise_for_status()
     print("   ✓ Конфигурация обновлена успешно!")
 except Exception as e:
