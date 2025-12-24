@@ -121,6 +121,8 @@ superset init || true
 python3 /app/superset_init.py || true
 
 # Start Superset
-echo "Starting Superset server..."
-exec superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger
+# Use PORT from environment (Railway) or default to 8088
+PORT=${PORT:-8088}
+echo "Starting Superset server on port ${PORT}..."
+exec superset run -h 0.0.0.0 -p ${PORT} --with-threads --reload --debugger
 
