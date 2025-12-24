@@ -60,16 +60,11 @@ SQLLAB_ASYNC_TIME_LIMIT_SEC = 600  # 10 minutes for async queries
 
 # Web server timeout (for HTTP requests)
 SUPERSET_WEBSERVER_TIMEOUT = 600  # 10 minutes for web server requests
-SUPERSET_WEBSERVER_WORKERS = 4  # Number of worker processes (adjust based on CPU cores)
 
 # Database connection pool settings
 SQLALCHEMY_POOL_TIMEOUT = 120  # Connection pool timeout (increased for long queries)
 SQLALCHEMY_POOL_RECYCLE = 3600  # Recycle connections after 1 hour
 SQLALCHEMY_POOL_PRE_PING = True  # Verify connections before using
-
-# Chart query timeout (for charts and dashboards)
-# This is the maximum time a chart query can run before timing out
-CHART_QUERY_TIMEOUT = 600  # 10 minutes for chart queries
 
 # Note: 
 # 1. Chart query timeout can also be set per database connection in Superset UI:
